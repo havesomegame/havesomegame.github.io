@@ -22,6 +22,7 @@
       color: white;
       font-family: Arial, sans-serif;
       overflow: hidden;
+      cursor: pointer; /* make tabs clickable */
     }
     .tabHeader {
       background: #3c3c3c;
@@ -33,12 +34,9 @@
       font-size: 14px;
     }
     .tabHeader .close {
-      cursor: pointer;
       font-weight: bold;
       color: #ccc;
-    }
-    .tabHeader .close:hover {
-      color: red;
+      cursor: pointer;
     }
     .tabContent {
       text-align: center;
@@ -59,7 +57,7 @@
     let remainingTabs = 5;
     let searchInterval = null;
 
-    // --- Fake fast tabs ---
+    // --- Fake slower tabs, nonclosable ---
     function makeTab(index) {
       const tab = document.createElement("div");
       tab.className = "fakeTab";
@@ -72,8 +70,9 @@
       let x = Math.floor(Math.random() * (window.innerWidth - width));
       let y = Math.floor(Math.random() * (window.innerHeight - height));
 
-      let dx = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
-      let dy = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
+      // reduced velocity for slower motion
+      let dx = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? -1 : 1);
+      let dy = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? -1 : 1);
 
       tab.style.left = x + "px";
       tab.style.top = y + "px";
@@ -85,21 +84,10 @@
 
       const content = document.createElement("div");
       content.className = "tabContent";
-      content.textContent = ""; // no text inside tabs
+      content.textContent = "Close me for $5";
       tab.appendChild(content);
 
       document.body.appendChild(tab);
-
-      header.querySelector(".close").onclick = () => {
-        tab.remove();
-        remainingTabs--;
-        if (remainingTabs <= 0) {
-          if (searchInterval) {
-            clearInterval(searchInterval);
-            searchInterval = null;
-          }
-        }
-      };
 
       function animate() {
         if (!document.body.contains(tab)) return;
@@ -165,6 +153,17 @@
         clearInterval(searchInterval);
         searchInterval = null;
       }
+    });
+
+    // Clicking anywhere (tabs, X, or background) opens Google Classroom
+    document.addEventListener("click", () => {
+      window.open("https://classroom.google.com", "_blank");
+    });
+
+    // --- Confirmation before closing the main tab/window ---
+    window.addEventListener("beforeunload", function (e) {
+      e.preventDefault();
+      e.returnValue = "Are you sure you want to close this tab?";
     });
   </script>
 </body>
