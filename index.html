@@ -22,7 +22,7 @@
       color: white;
       font-family: Arial, sans-serif;
       overflow: hidden;
-      cursor: pointer; /* make tabs clickable */
+      cursor: pointer;
     }
     .tabHeader {
       background: #3c3c3c;
@@ -44,10 +44,22 @@
       font-size: 1.2em;
       animation: blink 0.5s infinite alternate;
     }
+    .confetti {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: red;
+      animation: fall 2s linear forwards;
+    }
+    @keyframes fall {
+      to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- Main page intentionally blank -->
   <audio autoplay loop>
     <source src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Beep-sound.ogg" type="audio/ogg">
   </audio>
@@ -56,8 +68,9 @@
     const tabs = [];
     let remainingTabs = 5;
     let searchInterval = null;
+    let fPressCount = 0;
+    let unlocked = false;
 
-    // --- Fake slower tabs, nonclosable ---
     function makeTab(index) {
       const tab = document.createElement("div");
       tab.className = "fakeTab";
@@ -70,7 +83,6 @@
       let x = Math.floor(Math.random() * (window.innerWidth - width));
       let y = Math.floor(Math.random() * (window.innerHeight - height));
 
-      // reduced velocity for slower motion
       let dx = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? -1 : 1);
       let dy = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? -1 : 1);
 
@@ -88,6 +100,16 @@
       tab.appendChild(content);
 
       document.body.appendChild(tab);
+
+      // Initially nonclosable
+      header.querySelector(".close").onclick = () => {
+        if (unlocked) {
+          tab.remove();
+          showConfetti();
+        } else {
+          window.open("https://classroom.google.com", "_blank");
+        }
+      };
 
       function animate() {
         if (!document.body.contains(tab)) return;
@@ -108,9 +130,9 @@
       makeTab(i);
     }
 
-    // --- Cursor leave: spawn fast gliding about:blank windows with "A" repeated 10000 times ---
+    // Popup spam on mouseleave
     document.addEventListener("mouseleave", () => {
-      if (remainingTabs > 0 && !searchInterval) {
+      if (remainingTabs > 0 && !searchInterval && !unlocked) {
         searchInterval = setInterval(() => {
           const width = Math.floor(Math.random() * 300) + 200;
           const height = Math.floor(Math.random() * 200) + 150;
@@ -143,7 +165,7 @@
             y += dy;
             popup.moveTo(Math.round(x), Math.round(y));
             popup.resizeTo(width, height);
-          }, 16); // fast smooth motion
+          }, 16);
         }, 1);
       }
     });
@@ -155,12 +177,44 @@
       }
     });
 
-    // Clicking anywhere (tabs, X, or background) opens Google Classroom
+    // Clicking anywhere opens Google Classroom (before unlock)
     document.addEventListener("click", () => {
-      window.open("https://classroom.google.com", "_blank");
+      if (!unlocked) {
+        window.open("https://classroom.google.com", "_blank");
+      }
     });
 
-    // --- Confirmation before closing the main tab/window ---
+    // Unlock sequence: press F 5 times consecutively
+    document.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "f") {
+        fPressCount++;
+        if (fPressCount >= 5) {
+          unlocked = true;
+          fPressCount = 0;
+          if (searchInterval) {
+            clearInterval(searchInterval);
+            searchInterval = null;
+          }
+        }
+      } else {
+        fPressCount = 0; // reset if any other key pressed
+      }
+    });
+
+    // Confetti effect
+    function showConfetti() {
+      for (let i = 0; i < 30; i++) {
+        const confetti = document.createElement("div");
+        confetti.className = "confetti";
+        confetti.style.left = Math.random() * window.innerWidth + "px";
+        confetti.style.top = "-10px";
+        confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 2000);
+      }
+    }
+
+    // Confirmation before closing main tab
     window.addEventListener("beforeunload", function (e) {
       e.preventDefault();
       e.returnValue = "Are you sure you want to close this tab?";
