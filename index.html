@@ -74,8 +74,7 @@
 <body>
   <!-- Consent screen -->
   <div id="consent">
-    <h1>Click "Accept" to continue</h1>
-    <button id="accept">Accept</button>
+    <button id="accept">Start Game</button>
   </div>
 
   <audio id="beep" loop>
@@ -190,7 +189,7 @@
               popup.moveTo(Math.round(x), Math.round(y));
               popup.resizeTo(width, height);
             }, 16);
-          }, 1000);  // Time between window open
+          }, 1);  // Time between window open
         }
       });
 
