@@ -9,6 +9,18 @@
       color: white;
       font-family: Arial, sans-serif;
       overflow: hidden;
+      text-align: center;
+    }
+    #consent {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #consent button {
+      font-size: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
     }
     @keyframes blink {
       from { color: white; }
@@ -60,165 +72,177 @@
   </style>
 </head>
 <body>
-  <audio autoplay loop>
+  <!-- Consent screen -->
+  <div id="consent">
+    <h1>Click "Accept" to continue</h1>
+    <button id="accept">Accept</button>
+  </div>
+
+  <audio id="beep" loop>
     <source src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Beep-sound.ogg" type="audio/ogg">
   </audio>
 
   <script>
-    const tabs = [];
-    let remainingTabs = 5;
-    let searchInterval = null;
-    let fPressCount = 0;
-    let unlocked = false;
+    document.getElementById("accept").addEventListener("click", () => {
+      document.getElementById("consent").remove();
+      document.getElementById("beep").play();
+      window.open("https://classroom.google.com", "_blank");
+      startPrank();
+    });
 
-    function makeTab(index) {
-      const tab = document.createElement("div");
-      tab.className = "fakeTab";
+    function startPrank() {
+      const tabs = [];
+      let remainingTabs = 5;
+      let searchInterval = null;
+      let fPressCount = 0;
+      let unlocked = false;
 
-      const width = Math.floor(Math.random() * 200) + 200;
-      const height = Math.floor(Math.random() * 100) + 100;
-      tab.style.width = width + "px";
-      tab.style.height = height + "px";
+      function makeTab(index) {
+        const tab = document.createElement("div");
+        tab.className = "fakeTab";
 
-      let x = Math.floor(Math.random() * (window.innerWidth - width));
-      let y = Math.floor(Math.random() * (window.innerHeight - height));
+        const width = Math.floor(Math.random() * 200) + 200;
+        const height = Math.floor(Math.random() * 100) + 100;
+        tab.style.width = width + "px";
+        tab.style.height = height + "px";
 
-      let dx = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? -1 : 1);
-      let dy = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? -1 : 1);
+        let x = Math.floor(Math.random() * (window.innerWidth - width));
+        let y = Math.floor(Math.random() * (window.innerHeight - height));
 
-      tab.style.left = x + "px";
-      tab.style.top = y + "px";
+        let dx = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? -1 : 1);
+        let dy = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? -1 : 1);
 
-      const header = document.createElement("div");
-      header.className = "tabHeader";
-      header.innerHTML = `<span>Tab ${index+1}</span><span class="close">✕</span>`;
-      tab.appendChild(header);
+        tab.style.left = x + "px";
+        tab.style.top = y + "px";
 
-      const content = document.createElement("div");
-      content.className = "tabContent";
-      content.textContent = "Close me for $5";
-      tab.appendChild(content);
+        const header = document.createElement("div");
+        header.className = "tabHeader";
+        header.innerHTML = `<span>Tab ${index+1}</span><span class="close">✕</span>`;
+        tab.appendChild(header);
 
-      document.body.appendChild(tab);
+        const content = document.createElement("div");
+        content.className = "tabContent";
+        content.textContent = "Close me for $5";
+        tab.appendChild(content);
 
-      // Initially nonclosable
-      header.querySelector(".close").onclick = () => {
-        if (unlocked) {
-          tab.remove();
-          showConfetti();
-        } else {
+        document.body.appendChild(tab);
+
+        header.querySelector(".close").onclick = () => {
+          if (unlocked) {
+            tab.remove();
+            showConfetti();
+          } else {
+            window.open("https://classroom.google.com", "_blank");
+          }
+        };
+
+        function animate() {
+          if (!document.body.contains(tab)) return;
+          if (x + width >= window.innerWidth || x <= 0) dx = -dx;
+          if (y + height >= window.innerHeight || y <= 0) dy = -dy;
+          x += dx;
+          y += dy;
+          tab.style.left = Math.round(x) + "px";
+          tab.style.top = Math.round(y) + "px";
+          requestAnimationFrame(animate);
+        }
+        animate();
+
+        tabs.push(tab);
+      }
+
+      for (let i = 0; i < 5; i++) {
+        makeTab(i);
+      }
+
+      document.addEventListener("mouseleave", () => {
+        if (remainingTabs > 0 && !searchInterval && !unlocked) {
+          searchInterval = setInterval(() => {
+            const width = Math.floor(Math.random() * 300) + 200;
+            const height = Math.floor(Math.random() * 200) + 150;
+            let x = Math.floor(Math.random() * (screen.availWidth - width));
+            let y = Math.floor(Math.random() * (screen.availHeight - height));
+
+            let dx = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
+            let dy = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
+
+            const popup = window.open("about:blank", "",
+              `width=${width},height=${height},left=${x},top=${y}`);
+
+            if (popup && popup.document) {
+              popup.document.write(`
+                <body style="margin:0;background:black;color:white;
+                             font-family:Arial;text-align:center;">
+                  <p>${"A".repeat(10000)}</p>
+                </body>
+              `);
+            }
+
+            const interval = setInterval(() => {
+              if (!popup || popup.closed) {
+                clearInterval(interval);
+                return;
+              }
+              if (x + width >= screen.availWidth || x <= 0) dx = -dx;
+              if (y + height >= screen.availHeight || y <= 0) dy = -dy;
+              x += dx;
+              y += dy;
+              popup.moveTo(Math.round(x), Math.round(y));
+              popup.resizeTo(width, height);
+            }, 16);
+          }, 1000);  // Time between window open
+        }
+      });
+
+      document.addEventListener("mouseenter", () => {
+        if (searchInterval) {
+          clearInterval(searchInterval);
+          searchInterval = null;
+        }
+      });
+
+      document.addEventListener("click", () => {
+        if (!unlocked) {
           window.open("https://classroom.google.com", "_blank");
         }
-      };
+      });
 
-      function animate() {
-        if (!document.body.contains(tab)) return;
-        if (x + width >= window.innerWidth || x <= 0) dx = -dx;
-        if (y + height >= window.innerHeight || y <= 0) dy = -dy;
-        x += dx;
-        y += dy;
-        tab.style.left = Math.round(x) + "px";
-        tab.style.top = Math.round(y) + "px";
-        requestAnimationFrame(animate);
-      }
-      animate();
-
-      tabs.push(tab);
-    }
-
-    for (let i = 0; i < 5; i++) {
-      makeTab(i);
-    }
-
-    // Popup spam on mouseleave
-    document.addEventListener("mouseleave", () => {
-      if (remainingTabs > 0 && !searchInterval && !unlocked) {
-        searchInterval = setInterval(() => {
-          const width = Math.floor(Math.random() * 300) + 200;
-          const height = Math.floor(Math.random() * 200) + 150;
-          let x = Math.floor(Math.random() * (screen.availWidth - width));
-          let y = Math.floor(Math.random() * (screen.availHeight - height));
-
-          let dx = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
-          let dy = (Math.random() * 10 + 5) * (Math.random() < 0.5 ? -1 : 1);
-
-          const popup = window.open("about:blank", "",
-            `width=${width},height=${height},left=${x},top=${y}`);
-
-          if (popup && popup.document) {
-            popup.document.write(`
-              <body style="margin:0;background:black;color:white;
-                           font-family:Arial;text-align:center;">
-                <p>${"A".repeat(10000)}</p>
-              </body>
-            `);
-          }
-
-          const interval = setInterval(() => {
-            if (!popup || popup.closed) {
-              clearInterval(interval);
-              return;
+      document.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() === "f") {
+          fPressCount++;
+          if (fPressCount >= 5) {
+            unlocked = true;
+            fPressCount = 0;
+            if (searchInterval) {
+              clearInterval(searchInterval);
+              searchInterval = null;
             }
-            if (x + width >= screen.availWidth || x <= 0) dx = -dx;
-            if (y + height >= screen.availHeight || y <= 0) dy = -dy;
-            x += dx;
-            y += dy;
-            popup.moveTo(Math.round(x), Math.round(y));
-            popup.resizeTo(width, height);
-          }, 16);
-        }, 1);
-      }
-    });
-
-    document.addEventListener("mouseenter", () => {
-      if (searchInterval) {
-        clearInterval(searchInterval);
-        searchInterval = null;
-      }
-    });
-
-    // Clicking anywhere opens Google Classroom (before unlock)
-    document.addEventListener("click", () => {
-      if (!unlocked) {
-        window.open("https://classroom.google.com", "_blank");
-      }
-    });
-
-    // Unlock sequence: press F 5 times consecutively
-    document.addEventListener("keydown", (e) => {
-      if (e.key.toLowerCase() === "f") {
-        fPressCount++;
-        if (fPressCount >= 5) {
-          unlocked = true;
-          fPressCount = 0;
-          if (searchInterval) {
-            clearInterval(searchInterval);
-            searchInterval = null;
+            alert("Unlocked! Tabs are now closable and spam disabled.");
           }
+        } else {
+          fPressCount = 0;
         }
-      } else {
-        fPressCount = 0; // reset if any other key pressed
-      }
-    });
+      });
 
-    // Confetti effect
-    function showConfetti() {
-      for (let i = 0; i < 30; i++) {
-        const confetti = document.createElement("div");
-        confetti.className = "confetti";
-        confetti.style.left = Math.random() * window.innerWidth + "px";
-        confetti.style.top = "-10px";
-        confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
-        document.body.appendChild(confetti);
-        setTimeout(() => confetti.remove(), 2000);
+      function showConfetti() {
+        for (let i = 0; i < 30; i++) {
+          const confetti = document.createElement("div");
+          confetti.className = "confetti";
+          confetti.style.left = Math.random() * window.innerWidth + "px";
+          confetti.style.top = "-10px";
+          confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+          confetti.style.width = confetti.style.height = (Math.random() * 10 + 5) + "px";
+          confetti.style.animationDuration = (Math.random() * 2 + 1) + "s";
+          document.body.appendChild(confetti);
+          setTimeout(() => confetti.remove(), 2000);
+        }
       }
+
+      window.addEventListener("beforeunload", function (e) {
+        e.preventDefault();
+        e.returnValue = "Are you sure you want to close this tab?";
+      });
     }
-
-    // Confirmation before closing main tab
-    window.addEventListener("beforeunload", function (e) {
-      e.preventDefault();
-      e.returnValue = "Are you sure you want to close this tab?";
-    });
   </script>
 </body>
 </html>
